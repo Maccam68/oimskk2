@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["dataProxy"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model OfstedSection {
+  id           Int                @id @default(autoincrement())
+  title        String
+  description  String
+  actions      String[]
+  requirements OfstedRequirement[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@map("ofsted_sections")
+}
+
+model OfstedRequirement {
+  id          Int             @id @default(autoincrement())
+  sectionId   Int
+  title       String
+  description String
+  status      RequirementStatus @default(not_started)
+  completedAt DateTime?
+  evidence    OfstedEvidence[]
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  section     OfstedSection   @relation(fields: [sectionId], references: [id])
+
+  @@map("ofsted_requirements")
+}
+
+model OfstedEvidence {
+  id            Int               @id @default(autoincrement())
+  requirementId Int
+  fileUrl       String
+  description   String
+  uploadedBy    Int
+  uploadedAt    DateTime         @default(now())
+  requirement   OfstedRequirement @relation(fields: [requirementId], references: [id])
+  user          User             @relation(fields: [uploadedBy], references: [id])
+
+  @@map("ofsted_evidence")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  evidence  OfstedEvidence[]
+  
+  @@map("users")
+}
+
+enum RequirementStatus {
+  completed
+  in_progress
+  not_started
+}
